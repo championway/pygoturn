@@ -17,7 +17,7 @@ from helper import (Rescale, shift_crop_training_sample,
 cuda = torch.cuda.is_available()
 device = torch.device('cuda:0' if cuda else 'cpu')
 input_size = 224
-kSaveModel = 20000  # save model after every 20000 steps
+#kSaveModel = 20000  # save model after every 20000 steps
 batchSize = 50  # number of samples in a batch
 kGeneratedExamplesPerImage = 10  # generate 10 synthetic samples per image
 transform = NormalizeToTensor()
@@ -45,7 +45,7 @@ parser.add_argument('-d', '--data-directory', type=str,
                     default='../data/',
                     help='path to data directory')
 parser.add_argument('-s', '--save-directory', type=str,
-                    default='../saved_checkpoints/exp3/',
+                    default='../model/',
                     help='path to save directory')
 parser.add_argument('-lshift', '--lambda-shift-frac', default=5, type=float,
                     help='lambda-shift for random cropping')
@@ -61,7 +61,7 @@ parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('-b', '--batch-size', default=50, type=int,
                     help='number of samples in batch (default: 50)')
-parser.add_argument('--save-freq', default=20000, type=int,
+parser.add_argument('--save-freq', default=5000, type=int,
                     help='save checkpoint frequency (default: 20000)')
 
 
@@ -84,20 +84,22 @@ def main():
     bb_params['max_scale'] = args.max_scale
 
     # load datasets
-    alov = ALOVDataset(os.path.join(args.data_directory,
+    data_directory = '/media/arg_ws3/5E703E3A703E18EB/data/alov'
+    alov = ALOVDataset(os.path.join(data_directory,
                        'imagedata++/'),
-                       os.path.join(args.data_directory,
+                       os.path.join(data_directory,
                        'alov300++_rectangleAnnotation_full/'),
                        transform, input_size)
-    imagenet = ILSVRC2014_DET_Dataset(os.path.join(args.data_directory,
+    '''imagenet = ILSVRC2014_DET_Dataset(os.path.join(args.data_directory,
                                       'ILSVRC2014_DET_train/'),
                                       os.path.join(args.data_directory,
                                       'ILSVRC2014_DET_bbox_train/'),
                                       bb_params,
                                       transform,
-                                      input_size)
+                                      input_size)'''
     # list of datasets to train on
-    datasets = [alov, imagenet]
+    #datasets = [alov, imagenet]
+    datasets = [alov]
 
     # load model
     net = model.GoNet().to(device)
@@ -119,7 +121,7 @@ def main():
 
     # save trained model
     checkpoint = {'state_dict': net.state_dict()}
-    path = os.path.join(args.save_directory, 'pytorch_goturn.pth.tar')
+    path = os.path.join(args.save_directory, 'pytorch_goturn.pth')
     torch.save(checkpoint, path)
 
 
@@ -301,7 +303,7 @@ def train_model(model, datasets, criterion, optimizer):
                 if itr > 0 and itr % kSaveModel == 0:
                     path = os.path.join(args.save_directory,
                                         'model_itr_' + str(itr) + '_loss_' +
-                                        str(round(curr_loss, 3)) + '.pth.tar')
+                                        str(round(curr_loss, 3)) + '.pth')
                     save_checkpoint({'itr': itr,
                                      'np_rand_state': np.random.get_state(),
                                      'torch_rand_state': torch.get_rng_state(),
@@ -323,7 +325,7 @@ def train_model(model, datasets, criterion, optimizer):
     return model
 
 
-def save_checkpoint(state, filename='checkpoint.pth.tar'):
+def save_checkpoint(state, filename='checkpoint.pth'):
     torch.save(state, filename)
 
 
